@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/zmq_server.dir/main.cpp.o -o zmq_server  libimgui.a -lpthread -ldl /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so glfw_build/src/libglfw3.a /usr/lib/x86_64-linux-gnu/librt.a -lm /usr/lib/x86_64-linux-gnu/libzmq.so -ldl 
