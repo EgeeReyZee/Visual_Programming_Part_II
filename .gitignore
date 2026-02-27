@@ -1,63 +1,63 @@
-# build/
-# build-*/
-# cmake-build-*/
-# out/
-# .cmake/
+build/
+build-*/
+cmake-build-*/
+out/
+.cmake/
 
-# CMakeCache.txt
-# CMakeFiles/
-# CMakeScripts/
-# cmake_install.cmake
-# install_manifest.txt
-# compile_commands.json
-# CTestTestfile.cmake
-# _deps/
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
 
-# *.exe
-# *.out
-# *.app
-# *.a
-# *.so
-# *.so.*
-# *.dylib
-# *.dll
-# *.lib
-# zmq_server
+*.exe
+*.out
+*.app
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.lib
+zmq_server
 
-# location_messages.json
-# message_counter.txt
-# android_messages.json
-# _ip_tmp.txt
+location_messages.json
+message_counter.txt
+android_messages.json
+_ip_tmp.txt
 
-# .idea/
-# *.iml
+.idea/
+*.iml
 
-# .vscode/
-# *.code-workspace
+.vscode/
+*.code-workspace
 
-# .vs/
-# *.user
-# *.suo
-# *.VC.db
-# *.VC.opendb
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
 
-# *.xcodeproj/
-# *.xcworkspace/
-# xcuserdata/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
 
-# .DS_Store
-# .AppleDouble
-# .LSOverride
+.DS_Store
+.AppleDouble
+.LSOverride
 
-# Thumbs.db
-# ehthumbs.db
-# desktop.ini
+Thumbs.db
+ehthumbs.db
+desktop.ini
 
-# *~
-# .fuse_hidden*
+*~
+.fuse_hidden*
 
-# *.tmp
-# *.log
-# *.bak
-# *.orig
-# temp_output.txt
+*.tmp
+*.log
+*.bak
+*.orig
+temp_output.txt
