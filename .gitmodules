@@ -1,3 +1,18 @@
 [submodule "VP"]
 	path = VP
 	url = https://github.com/EgeeReyZee/Visual_Programming.git
+[submodule "imgui"]
+	path = imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "glfw"]
+	path = glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "zmq"]
+	path = zeromq
+	url = https://github.com/zeromq/cppzmq.git
+[submodule "ZMQ_CPP_Server/build/json"]
+	path = ZMQ_CPP_Server/build/json
+	url = https://github.com/nlohmann/json.git
+[submodule "json"]
+	path = json
+	url = https://github.com/nlohmann/json.git
