@@ -765,6 +765,12 @@ X11_xkbfile_INCLUDE_PATH:PATH=X11_xkbfile_INCLUDE_PATH-NOTFOUND
 //Path to a library.
 X11_xkbfile_LIB:FILEPATH=X11_xkbfile_LIB-NOTFOUND
 
+//The directory containing a CMake configuration file for ZeroMQ.
+ZeroMQ_DIR:PATH=ZeroMQ_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for glfw3.
+glfw3_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/glfw3
+
 //Path to a library.
 pkgcfg_lib_Wayland_wayland-client:FILEPATH=/usr/lib/x86_64-linux-gnu/libwayland-client.so
 
@@ -779,6 +785,9 @@ pkgcfg_lib_Wayland_xkbcommon:FILEPATH=/usr/lib/x86_64-linux-gnu/libxkbcommon.so
 
 //Path to a library.
 pkgcfg_lib_ZMQ_PC_zmq:FILEPATH=/usr/lib/x86_64-linux-gnu/libzmq.so
+
+//Path to a library.
+pkgcfg_lib_ZMQ_zmq:FILEPATH=/usr/lib/x86_64-linux-gnu/libzmq.so
 
 //Value Computed by CMake
 zmq_location_server_BINARY_DIR:STATIC=/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/build
@@ -1346,6 +1355,22 @@ X11_xkbcommon_X11_LIB-ADVANCED:INTERNAL=1
 X11_xkbfile_INCLUDE_PATH-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: X11_xkbfile_LIB
 X11_xkbfile_LIB-ADVANCED:INTERNAL=1
+ZMQ_CFLAGS:INTERNAL=-I/usr/include;-isystem;/usr/include/mit-krb5;-I/usr/include/pgm-5.3;-I/usr/include/libxml2;-I/usr/include/x86_64-linux-gnu
+ZMQ_CFLAGS_I:INTERNAL=
+ZMQ_CFLAGS_OTHER:INTERNAL=-isystem;/usr/include/mit-krb5
+ZMQ_FOUND:INTERNAL=1
+ZMQ_INCLUDEDIR:INTERNAL=/usr/include
+ZMQ_INCLUDE_DIRS:INTERNAL=/usr/include;/usr/include/pgm-5.3;/usr/include/libxml2;/usr/include/x86_64-linux-gnu
+ZMQ_LDFLAGS:INTERNAL=-L/usr/lib/x86_64-linux-gnu;-lzmq
+ZMQ_LDFLAGS_OTHER:INTERNAL=
+ZMQ_LIBDIR:INTERNAL=/usr/lib/x86_64-linux-gnu
+ZMQ_LIBRARIES:INTERNAL=zmq
+ZMQ_LIBRARY_DIRS:INTERNAL=/usr/lib/x86_64-linux-gnu
+ZMQ_LIBS:INTERNAL=
+ZMQ_LIBS_L:INTERNAL=
+ZMQ_LIBS_OTHER:INTERNAL=
+ZMQ_LIBS_PATHS:INTERNAL=
+ZMQ_MODULE_NAME:INTERNAL=libzmq
 ZMQ_PC_CFLAGS:INTERNAL=-I/usr/include;-isystem;/usr/include/mit-krb5;-I/usr/include/pgm-5.3;-I/usr/include/libxml2;-I/usr/include/x86_64-linux-gnu
 ZMQ_PC_CFLAGS_I:INTERNAL=
 ZMQ_PC_CFLAGS_OTHER:INTERNAL=-isystem;/usr/include/mit-krb5
@@ -1381,13 +1406,34 @@ ZMQ_PC_libzmq_INCLUDEDIR:INTERNAL=
 ZMQ_PC_libzmq_LIBDIR:INTERNAL=
 ZMQ_PC_libzmq_PREFIX:INTERNAL=
 ZMQ_PC_libzmq_VERSION:INTERNAL=
+ZMQ_PREFIX:INTERNAL=/usr
+ZMQ_STATIC_CFLAGS:INTERNAL=-I/usr/include;-isystem;/usr/include/mit-krb5;-I/usr/include/pgm-5.3;-I/usr/include/libxml2;-I/usr/include/x86_64-linux-gnu
+ZMQ_STATIC_CFLAGS_I:INTERNAL=
+ZMQ_STATIC_CFLAGS_OTHER:INTERNAL=-isystem;/usr/include/mit-krb5
+ZMQ_STATIC_INCLUDE_DIRS:INTERNAL=/usr/include;/usr/include/pgm-5.3;/usr/include/libxml2;/usr/include/x86_64-linux-gnu
+ZMQ_STATIC_LDFLAGS:INTERNAL=-L/usr/lib/x86_64-linux-gnu;-lzmq;-lstdc++;-lpthread;-lrt;-L/usr/lib/x86_64-linux-gnu/mit-krb5;-lgssapi_krb5;-L/usr/lib/x86_64-linux-gnu/mit-krb5;-lkrb5;-lk5crypto;-lcom_err;-lkrb5support;-lsodium;-pthread;-lpgm;-lm;-lnorm;libprotokit.a;-L/usr/lib/x86_64-linux-gnu;-lxml2;-licui18n;-licuuc;-licudata;-lz;-llzma;-lm;-lbsd;-lmd
+ZMQ_STATIC_LDFLAGS_OTHER:INTERNAL=-pthread;libprotokit.a
+ZMQ_STATIC_LIBDIR:INTERNAL=
+ZMQ_STATIC_LIBRARIES:INTERNAL=zmq;stdc++;pthread;rt;gssapi_krb5;krb5;k5crypto;com_err;krb5support;sodium;pgm;m;norm;xml2;icui18n;icuuc;icudata;z;lzma;m;bsd;md
+ZMQ_STATIC_LIBRARY_DIRS:INTERNAL=/usr/lib/x86_64-linux-gnu;/usr/lib/x86_64-linux-gnu/mit-krb5;/usr/lib/x86_64-linux-gnu/mit-krb5;/usr/lib/x86_64-linux-gnu
+ZMQ_STATIC_LIBS:INTERNAL=
+ZMQ_STATIC_LIBS_L:INTERNAL=
+ZMQ_STATIC_LIBS_OTHER:INTERNAL=
+ZMQ_STATIC_LIBS_PATHS:INTERNAL=
+ZMQ_VERSION:INTERNAL=4.3.5
+ZMQ_libzmq_INCLUDEDIR:INTERNAL=
+ZMQ_libzmq_LIBDIR:INTERNAL=
+ZMQ_libzmq_PREFIX:INTERNAL=
+ZMQ_libzmq_VERSION:INTERNAL=
 //linker supports push/pop state
 _CMAKE_LINKER_PUSHPOP_STATE_SUPPORTED:INTERNAL=TRUE
 //CMAKE_INSTALL_PREFIX during last run
 _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=/usr/local
 __pkg_config_arguments_Wayland:INTERNAL=REQUIRED;wayland-client>=0.2.7;wayland-cursor>=0.2.7;wayland-egl>=0.2.7;xkbcommon>=0.5.0
+__pkg_config_arguments_ZMQ:INTERNAL=QUIET;libzmq
 __pkg_config_arguments_ZMQ_PC:INTERNAL=libzmq;QUIET;IMPORTED_TARGET
 __pkg_config_checked_Wayland:INTERNAL=1
+__pkg_config_checked_ZMQ:INTERNAL=1
 __pkg_config_checked_ZMQ_PC:INTERNAL=1
 //ADVANCED property for variable: pkgcfg_lib_Wayland_wayland-client
 pkgcfg_lib_Wayland_wayland-client-ADVANCED:INTERNAL=1
@@ -1399,5 +1445,7 @@ pkgcfg_lib_Wayland_wayland-egl-ADVANCED:INTERNAL=1
 pkgcfg_lib_Wayland_xkbcommon-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: pkgcfg_lib_ZMQ_PC_zmq
 pkgcfg_lib_ZMQ_PC_zmq-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_ZMQ_zmq
+pkgcfg_lib_ZMQ_zmq-ADVANCED:INTERNAL=1
 prefix_result:INTERNAL=/usr/lib/x86_64-linux-gnu
 

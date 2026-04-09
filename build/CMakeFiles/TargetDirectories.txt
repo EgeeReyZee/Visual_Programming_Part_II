@@ -1,4 +1,5 @@
 /mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/build/CMakeFiles/imgui.dir
+/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/build/CMakeFiles/implot.dir
 /mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/build/CMakeFiles/zmq_server.dir
 /mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/build/CMakeFiles/edit_cache.dir
 /mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/build/CMakeFiles/rebuild_cache.dir

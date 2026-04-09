@@ -93,6 +93,8 @@ zmq_server_EXTERNAL_OBJECTS =
 zmq_server: CMakeFiles/zmq_server.dir/main.cpp.o
 zmq_server: CMakeFiles/zmq_server.dir/build.make
 zmq_server: libimgui.a
+zmq_server: libimplot.a
+zmq_server: libimgui.a
 zmq_server: /usr/lib/x86_64-linux-gnu/libGLX.so
 zmq_server: /usr/lib/x86_64-linux-gnu/libOpenGL.so
 zmq_server: glfw_build/src/libglfw3.a

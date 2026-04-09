@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/json/include -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui/backends -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/glfw/include -isystem /usr/include/pgm-5.3 -isystem /usr/include/libxml2 -isystem /usr/include/mit-krb5
+CXX_INCLUDES = -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/json/include -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui/backends -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/implot -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/glfw/include -isystem /usr/include/pgm-5.3 -isystem /usr/include/libxml2
 
-CXX_FLAGS = -std=gnu++17 -Wall -Wextra -Wno-unused-variable
+CXX_FLAGS = -std=gnu++17 -isystem /usr/include/mit-krb5 -Wall -Wextra -Wno-unused-variable
 

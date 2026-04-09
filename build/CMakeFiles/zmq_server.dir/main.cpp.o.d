@@ -158,8 +158,9 @@ CMakeFiles/zmq_server.dir/main.cpp.o: \
  /usr/include/c++/13/bits/stl_uninitialized.h \
  /usr/include/c++/13/bits/stl_vector.h \
  /usr/include/c++/13/bits/stl_bvector.h \
- /usr/include/c++/13/bits/vector.tcc /usr/include/c++/13/thread \
- /usr/include/c++/13/bits/std_thread.h \
+ /usr/include/c++/13/bits/vector.tcc /usr/include/c++/13/deque \
+ /usr/include/c++/13/bits/stl_deque.h /usr/include/c++/13/bits/deque.tcc \
+ /usr/include/c++/13/thread /usr/include/c++/13/bits/std_thread.h \
  /usr/include/c++/13/bits/unique_ptr.h \
  /usr/include/c++/13/bits/this_thread_sleep.h \
  /usr/include/c++/13/bits/chrono.h /usr/include/c++/13/ratio \
@@ -174,12 +175,13 @@ CMakeFiles/zmq_server.dir/main.cpp.o: \
  /usr/include/c++/13/bits/atomic_base.h \
  /usr/include/c++/13/bits/atomic_lockfree_defines.h \
  /usr/include/c++/13/chrono /usr/include/c++/13/cstring \
- /usr/include/string.h /usr/include/strings.h \
+ /usr/include/string.h /usr/include/strings.h /usr/include/c++/13/cstdarg \
  /mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui/imgui.h \
  /mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui/imconfig.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/float.h /usr/include/assert.h \
  /mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui/backends/imgui_impl_glfw.h \
  /mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui/backends/imgui_impl_opengl3.h \
+ /mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/implot/implot.h \
  /mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/glfw/include/GLFW/glfw3.h \
  /usr/include/GL/gl.h /usr/include/GL/glext.h \
  /usr/include/KHR/khrplatform.h /usr/include/zmq.h /usr/include/signal.h \

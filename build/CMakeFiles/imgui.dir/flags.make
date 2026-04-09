@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui/backends -I/mnt/c/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/glfw/include
 
-CXX_FLAGS = -std=gnu++17
+CXX_FLAGS = -std=gnu++17 -w
 
