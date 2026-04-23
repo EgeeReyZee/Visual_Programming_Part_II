@@ -19,3 +19,6 @@
 [submodule "implot"]
 	path = implot
 	url = https://github.com/epezent/implot.git
+[submodule "postgres"]
+	path = postgres
+	url = https://github.com/postgres/postgres.git
