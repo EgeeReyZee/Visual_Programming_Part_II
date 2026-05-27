@@ -1,7 +1,11 @@
 #include "db.h"
+#include "map.h"
 
 #include <iostream>
 #include <cstdlib>
+#include <cstring>
+#include <sstream>
+#include <string>
 
 bool connect_to_db(DBContext& db, const std::string& conninfo) {
     db.conn = PQconnectdb(conninfo.c_str());
@@ -139,3 +143,94 @@ bool save_location_to_db(DBContext& db, const Location& loc, int counter) {
     PQclear(res);
     return true;
 }
+
+bool db_control(DBContext& db, char* query, char* result_buffer, size_t buffer_size, MapState& ms) {
+    if (!db.connected || !db.conn) {
+        snprintf(result_buffer, buffer_size, "ERROR: DB CONNECTION FAILED");
+        return false;
+    }
+    std::string str(query);
+    std::stringstream ss(str);
+    std::string word;
+    std::vector<std::string> words;
+    while (ss >> word) {
+        words.push_back(word);
+    }
+    if (!words.empty() && words[0] == "GENERATE") {
+        std::string str(query);
+        std::stringstream ss(str);
+        generate_data_for_db(db, words[1].c_str(), std::stoi(words[2]), ms);
+    }
+    PGresult* res = PQexec(db.conn, query);
+    ExecStatusType status = PQresultStatus(res);
+    
+    if (status != PGRES_TUPLES_OK && status != PGRES_COMMAND_OK) {
+        snprintf(result_buffer, buffer_size, "Query failed: %s\n%s", 
+                 query, PQerrorMessage(db.conn));
+        PQclear(res);
+        return false;
+    }
+    result_buffer[0] = '\0';
+    if (status == PGRES_TUPLES_OK) {
+        int rows = PQntuples(res);
+        int cols = PQnfields(res);
+        for (int i = 0; i < cols; i++) {
+            if (i > 0) strncat(result_buffer, "\t", buffer_size - strlen(result_buffer) - 1);
+            strncat(result_buffer, PQfname(res, i), buffer_size - strlen(result_buffer) - 1);
+        }
+        strncat(result_buffer, "\n", buffer_size - strlen(result_buffer) - 1);
+        for (int i = 0; i < cols; i++) {
+            if (i > 0) strncat(result_buffer, "\t", buffer_size - strlen(result_buffer) - 1);
+            strncat(result_buffer, "-------", buffer_size - strlen(result_buffer) - 1);
+        }
+        strncat(result_buffer, "\n", buffer_size - strlen(result_buffer) - 1);
+        for (int i = 0; i < rows && i < 100; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (j > 0) strncat(result_buffer, "\t", buffer_size - strlen(result_buffer) - 1);
+                char* value = PQgetvalue(res, i, j);
+                if (value) {
+                    strncat(result_buffer, value, buffer_size - strlen(result_buffer) - 1);
+                } else {
+                    strncat(result_buffer, "NULL", buffer_size - strlen(result_buffer) - 1);
+                }
+            }
+            strncat(result_buffer, "\n", buffer_size - strlen(result_buffer) - 1);
+        }
+        
+        char row_count[256];
+        snprintf(row_count, sizeof(row_count), "\n%d row(s) returned", rows);
+        strncat(result_buffer, row_count, buffer_size - strlen(result_buffer) - 1);
+    } 
+    else if (status == PGRES_COMMAND_OK) {
+        char cmd_status[256];
+        snprintf(cmd_status, sizeof(cmd_status), "Query executed successfully.\n%s", 
+                 PQcmdStatus(res));
+        strncat(result_buffer, cmd_status, buffer_size - strlen(result_buffer) - 1);
+        char* affected = PQcmdTuples(res);
+        if (affected && affected[0] != '\0') {
+            char affected_msg[256];
+            snprintf(affected_msg, sizeof(affected_msg), "\nAffected rows: %s", affected);
+            strncat(result_buffer, affected_msg, buffer_size - strlen(result_buffer) - 1);
+        }
+    }
+    
+    PQclear(res);
+    return true;
+}
+
+bool generate_data_for_db(DBContext& db, const char* table_name, int data_count, MapState& ms) {
+    srand(time(nullptr));
+    MapBounds bounds = ms.get_bounds_copy();
+    float min_lat = bounds.min_lat; float max_lat = bounds.max_lat;
+    float min_lon = bounds.min_lon; float max_lon = bounds.max_lon;
+    int bands[] = {1, 3, 7, 20, 28}; int cellIdentity[] = {0, 138256642, 268435455};
+    if (table_name == std::string("lte_cells")) {
+        for (int i = 1; i < data_count+1; i++) {
+            char query[1024];
+            snprintf(query, sizeof(query),
+                "INSERT INTO lte_cells "
+                "(location_id, pci, band, cell_identity, earfcn, tac, "
+                " rsrp, rsrq, rssi, rssnr, cqi, asu_level, timing_advance, is_registered, "
+                "latitude, longitude) "
+                "VALUES (%d, %d, %d, %d, %d, %d, %f, %f, %f, %f, %d, %d, %f, %d, %f, %f)", 
+                i, 313, bands[rand() % 5], 

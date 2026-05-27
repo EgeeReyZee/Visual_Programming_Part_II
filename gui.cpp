@@ -1,6 +1,7 @@
 #include "gui.h"
 #include "server.h"
 #include "map.h"
+#include "db.h"
 
 #include <cstdarg>
 #include <cmath>
@@ -312,24 +313,24 @@ static void draw_osm_map(float dpi_scale, MapState& ms, double& center_lat, doub
 
     ImVec2 plot_size = ImGui::GetContentRegionAvail();
 
-    double tiles_x   = plot_size.x / 256.0;
-    double lon_span  = tiles_x * 360.0 / (1 << zoom);
-    double tiles_y   = plot_size.y / 256.0;
-    double lat_span  = tiles_y * 360.0 / (1 << zoom);
+    double cx       = lon_to_tile_x(center_lon, zoom);
+    double cy       = lat_to_tile_y(center_lat, zoom);
+    double half_tx  = plot_size.x / (2.0 * 256.0);
+    double half_ty  = plot_size.y / (2.0 * 256.0);
+    int    tc       = 1 << zoom;
 
-    double lon_min = center_lon - lon_span / 2.0;
-    double lon_max = center_lon + lon_span / 2.0;
-    double lat_min = center_lat - lat_span / 2.0;
-    double lat_max = center_lat + lat_span / 2.0;
+    double ay_min = std::max(0.0,        cy - half_ty);
+    double ay_max = std::min((double)tc, cy + half_ty);
 
-    ImPlot::SetNextAxesLimits(lon_min, lon_max, lat_min, lat_max, ImGuiCond_Always);
+    ImPlot::SetNextAxesLimits(cx - half_tx, cx + half_tx, ay_min, ay_max, ImGuiCond_Always);
 
     if (ImPlot::BeginPlot("##osm", plot_size,
-                          ImPlotFlags_Equal))
+                          ImPlotFlags_NoLegend | ImPlotFlags_NoMenus |
+                          ImPlotFlags_NoBoxSelect | ImPlotFlags_NoFrame))
     {
-        ImPlot::SetupAxes("Lon", "Lat",
-                          ImPlotAxisFlags_NoTickLabels,
-                          ImPlotAxisFlags_NoTickLabels);
+        ImPlot::SetupAxes(nullptr, nullptr,
+                          ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks,
+                          ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks | ImPlotAxisFlags_Invert);
 
         map_draw(ms, center_lat, center_lon, zoom, plot_size.x, plot_size.y);
 
@@ -337,10 +338,10 @@ static void draw_osm_map(float dpi_scale, MapState& ms, double& center_lat, doub
             ImVec2 delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
             ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
 
-            double dlon = -delta.x / plot_size.x * lon_span;
-            double dlat =  delta.y / plot_size.y * lat_span;
-            center_lon = std::clamp(center_lon + dlon, -180.0, 180.0);
-            center_lat = std::clamp(center_lat + dlat,  -85.0,  85.0);
+            double new_cx = cx - delta.x / 256.0;
+            double new_cy = std::clamp(cy - delta.y / 256.0, 0.0, (double)tc);
+            center_lon = tile_x_to_lon_f(new_cx, zoom);
+            center_lat = std::clamp(tile_y_to_lat_f(new_cy, zoom), -85.0511, 85.0511);
         }
 
         if (ImPlot::IsPlotHovered()) {
@@ -352,6 +353,44 @@ static void draw_osm_map(float dpi_scale, MapState& ms, double& center_lat, doub
         ImPlot::EndPlot();
     }
 
+    ImGui::End();
+}
+
+static void draw_sql_panel(float dpi_scale, DBContext& db) {
+    ImGui::SetNextWindowPos (ImVec2(750 * dpi_scale,  570 * dpi_scale), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(560 * dpi_scale, 400 * dpi_scale), ImGuiCond_FirstUseEver);  // Increased height
+    ImGui::Begin("Database Control", nullptr);
+    
+    static char buffer[4096];
+    static char result_buffer[32768];
+    static bool has_result = false;
+    
+    ImGui::Text("Query:");
+    ImGui::SetNextItemWidth(540 * dpi_scale);
+    if (ImGui::InputTextMultiline("##query", buffer, 4096, 
+        ImVec2(540 * dpi_scale, 80 * dpi_scale),
+        ImGuiInputTextFlags_CtrlEnterForNewLine)) {
+    }
+    
+    if (ImGui::Button("RUN")) {
+        has_result = db_control(db, buffer, result_buffer, sizeof(result_buffer));
+    }
+    
+    ImGui::SameLine();
+    if (ImGui::Button("Clear")) {
+        buffer[0] = '\0';
+        result_buffer[0] = '\0';
+        has_result = false;
+    }
+    if (has_result && result_buffer[0] != '\0') {
+        ImGui::Separator();
+        ImGui::Text("Result:");
+        ImGui::SetNextItemWidth(540 * dpi_scale);
+        ImGui::InputTextMultiline("##result", result_buffer, sizeof(result_buffer),
+            ImVec2(540 * dpi_scale, 200 * dpi_scale),
+            ImGuiInputTextFlags_ReadOnly);
+    }
+    
     ImGui::End();
 }
 
@@ -430,6 +469,7 @@ void run_gui(SharedState* state, DBContext& db) {
         draw_location_network_panel(dpi_scale, locCopy, netCopy, msgCount);
         draw_log_panel(dpi_scale, historyLines);
         draw_signal_plots(dpi_scale, histCopy);
+        draw_sql_panel(dpi_scale, db);
 
         if (map_follow && locCopy.valid) {
             map_lat = locCopy.latitude;

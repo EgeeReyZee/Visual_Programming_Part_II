@@ -50,10 +50,46 @@ double tile_y_to_lat(int y, int zoom) {
     return 180.0 / PI * std::atan(std::sinh(n));
 }
 
+double tile_x_to_lon_f(double x, int zoom) {
+    return x / static_cast<double>(1 << zoom) * 360.0 - 180.0;
+}
+
+double tile_y_to_lat_f(double y, int zoom) {
+    double n = PI - 2.0 * PI * y / (1 << zoom);
+    return 180.0 / PI * std::atan(std::sinh(n));
+}
+
 int lat_lon_to_zoom(double lon_span_deg) {
     if (lon_span_deg <= 0.0) return ZOOM_MAX;
     int z = static_cast<int>(std::round(std::log2(360.0 / lon_span_deg)));
     return std::max(ZOOM_MIN, std::min(ZOOM_MAX, z));
+}
+
+MapBounds get_current_map_bounds(const MapState& ms, 
+                                  double center_lat, 
+                                  double center_lon, 
+                                  int zoom, 
+                                  float plot_w, 
+                                  float plot_h) {
+    MapBounds bounds;
+    
+    int tile_count = 1 << zoom;
+    double cx = lon_to_tile_x(center_lon, zoom);
+    double cy = lat_to_tile_y(center_lat, zoom);
+    double half_tx = plot_w / (2.0 * TILE_PX);
+    double half_ty = plot_h / (2.0 * TILE_PX);
+    
+    double left_tile   = cx - half_tx;
+    double right_tile  = cx + half_tx;
+    double bottom_tile = cy - half_ty;
+    double top_tile    = cy + half_ty;
+    
+    bounds.min_lon = tile_x_to_lon_f(left_tile, zoom);
+    bounds.max_lon = tile_x_to_lon_f(right_tile, zoom);
+    bounds.min_lat = tile_y_to_lat_f(bottom_tile, zoom);
+    bounds.max_lat = tile_y_to_lat_f(top_tile, zoom);
+    
+    return bounds;
 }
 
 static std::string tile_cache_path(int zoom, int x, int y) {
@@ -61,13 +97,6 @@ static std::string tile_cache_path(int zoom, int x, int y) {
            std::to_string(zoom) + "/" +
            std::to_string(x)    + "/" +
            std::to_string(y)    + ".png";
-}
-
-static size_t write_callback(void* contents, size_t size, size_t nmemb, void* userp) {
-    std::ofstream* ofs = static_cast<std::ofstream*>(userp);
-    size_t total = size * nmemb;
-    ofs->write(static_cast<char*>(contents), total);
-    return total;
 }
 
 static bool download_tile_curl(int zoom, int x, int y) {
@@ -239,46 +268,29 @@ void map_draw(MapState& ms, double center_lat, double center_lon,
         std::swap(ms.download_queue, empty);
     }
 
-    int max_tile = (1 << zoom) - 1;
-    double aspect = plot_w / plot_h;
-    
-    double tiles_x_visible = plot_w / TILE_PX;
-    double tiles_y_visible = plot_h / TILE_PX;
-    
+    int tile_count = 1 << zoom;
     double cx = lon_to_tile_x(center_lon, zoom);
     double cy = lat_to_tile_y(center_lat, zoom);
-    
-    double tile_min_x_raw = cx - tiles_x_visible / 2.0;
-    double tile_max_x_raw = cx + tiles_x_visible / 2.0;
-    double tile_min_y_raw = cy - tiles_y_visible / 2.0;
-    double tile_max_y_raw = cy + tiles_y_visible / 2.0;
-    
-    tile_min_y_raw = std::max(0.0, tile_min_y_raw);
-    tile_max_y_raw = std::min(static_cast<double>(max_tile + 1), tile_max_y_raw);
-    
-    int tile_min_x = static_cast<int>(std::floor(tile_min_x_raw));
-    int tile_max_x = static_cast<int>(std::floor(tile_max_x_raw));
-    int tile_min_y = static_cast<int>(std::floor(tile_min_y_raw));
-    int tile_max_y = static_cast<int>(std::floor(tile_max_y_raw));
-    
-    tile_min_y = std::max(0, tile_min_y);
-    tile_max_y = std::min(max_tile, tile_max_y);
+    double half_tx = plot_w / (2.0 * TILE_PX);
+    double half_ty = plot_h / (2.0 * TILE_PX);
+
+    int tile_min_x = (int)std::floor(cx - half_tx);
+    int tile_max_x = (int)std::floor(cx + half_tx);
+    int tile_min_y = (int)std::max(0.0,                       std::floor(cy - half_ty));
+    int tile_max_y = (int)std::min((double)tile_count - 1.0,  std::floor(cy + half_ty));
 
     ImDrawList* dl = ImPlot::GetPlotDrawList();
-    
+
+    ImPlot::PushPlotClipRect();
+
     for (int ty = tile_min_y; ty <= tile_max_y; ++ty) {
         for (int tx = tile_min_x; tx <= tile_max_x; ++tx) {
-            int wrapped_x = tx;
-            int tile_count = 1 << zoom;
-            while (wrapped_x < 0) wrapped_x += tile_count;
-            while (wrapped_x >= tile_count) wrapped_x -= tile_count;
-            
+            int wrapped_x = ((tx % tile_count) + tile_count) % tile_count;
+
             map_request_tile(ms, zoom, wrapped_x, ty);
 
-            double lon0 = tile_x_to_lon(tx, zoom);
-            double lon1 = tile_x_to_lon(tx + 1, zoom);
-            double lat1 = tile_y_to_lat(ty, zoom);
-            double lat0 = tile_y_to_lat(ty + 1, zoom);
+            ImVec2 p0 = ImPlot::PlotToPixels(ImPlotPoint((double)tx,       (double)ty));
+            ImVec2 p1 = ImPlot::PlotToPixels(ImPlotPoint((double)(tx + 1), (double)(ty + 1)));
 
             TileKey key{zoom, wrapped_x, ty};
             unsigned int tex_id = 0;
@@ -289,36 +301,33 @@ void map_draw(MapState& ms, double center_lat, double center_lon,
                     tex_id = it->second.tex_id;
             }
 
-            ImVec2 p0 = ImPlot::PlotToPixels(ImPlotPoint(lon0, lat0));
-            ImVec2 p1 = ImPlot::PlotToPixels(ImPlotPoint(lon1, lat1));
-
             if (tex_id == 0) {
-                dl->AddRectFilled(p0, p1, IM_COL32(60, 60, 70, 255));
-                char lbl[32];
-                std::snprintf(lbl, sizeof(lbl), "%d/%d/%d", zoom, wrapped_x, ty);
-                dl->AddText(ImVec2((p0.x + p1.x) * 0.5f - 20, (p0.y + p1.y) * 0.5f),
-                           IM_COL32(150, 150, 150, 200), lbl);
+                dl->AddRectFilled(p0, p1, IM_COL32(45, 45, 55, 255));
             } else {
-                dl->AddImageQuad(
+                dl->AddImage(
                     reinterpret_cast<ImTextureID>(static_cast<uintptr_t>(tex_id)),
-                    p0, ImVec2(p1.x, p0.y), p1, ImVec2(p0.x, p1.y),
-                    ImVec2(0, 1), ImVec2(1, 1), ImVec2(1, 0), ImVec2(0, 0),
+                    p0, p1,
+                    ImVec2(0, 0), ImVec2(1, 1),
                     IM_COL32_WHITE
                 );
             }
         }
     }
 
-    {
-        ImVec2 screen_pos = ImPlot::PlotToPixels(ImPlotPoint(center_lon, center_lat));
-        const float R     = 10.0f;
-        const float W     = 2.5f;
-        const ImU32 COL   = IM_COL32(255, 50, 50, 255);
+    MapBounds bounds = get_current_map_bounds(ms, center_lat, center_lon, 
+                                               zoom, plot_w, plot_h);
+    ms.update_bounds(bounds.min_lon, bounds.max_lon, 
+                     bounds.min_lat, bounds.max_lat, zoom);
 
-        dl->AddLine(ImVec2(screen_pos.x - R, screen_pos.y),
-                    ImVec2(screen_pos.x + R, screen_pos.y), COL, W);
-        dl->AddLine(ImVec2(screen_pos.x, screen_pos.y - R),
-                    ImVec2(screen_pos.x, screen_pos.y + R), COL, W);
-        dl->AddCircle(screen_pos, 3.5f, COL, 12, W);
-    }
+    double pos_tx = lon_to_tile_x(center_lon, zoom);
+    double pos_ty = lat_to_tile_y(center_lat, zoom);
+    ImVec2 screen_pos = ImPlot::PlotToPixels(ImPlotPoint(pos_tx, pos_ty));
+    const float R   = 10.0f;
+    const float W   = 2.5f;
+    const ImU32 COL = IM_COL32(255, 50, 50, 255);
+    dl->AddLine(ImVec2(screen_pos.x - R, screen_pos.y), ImVec2(screen_pos.x + R, screen_pos.y), COL, W);
+    dl->AddLine(ImVec2(screen_pos.x, screen_pos.y - R), ImVec2(screen_pos.x, screen_pos.y + R), COL, W);
+    dl->AddCircle(screen_pos, 3.5f, COL, 12, W);
+
+    ImPlot::PopPlotClipRect();
 }
