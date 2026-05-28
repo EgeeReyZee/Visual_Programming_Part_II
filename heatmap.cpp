@@ -2,7 +2,6 @@
 #include "map.h"
 
 #include <cmath>
-#include <cstring>
 #include <algorithm>
 #include <vector>
 #include <iostream>
@@ -15,78 +14,78 @@
 #include "imgui/imgui.h"
 #include "implot/implot.h"
 
-static void gradient_rsrp(float t, uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) {
-    if (t < 0.18f) { r = g = b = a = 0; return; }
-    a = 255;
-    if (t < 0.45f) {
-        float s = (t - 0.18f) / 0.27f;
-        r = (uint8_t)(0   + s * 0);
-        g = (uint8_t)(30  + s * 120);
-        b = (uint8_t)(200 + s * 55);
-    } else if (t < 0.64f) {
-        float s = (t - 0.45f) / 0.19f;
-        r = (uint8_t)(0   + s * 100);
-        g = (uint8_t)(150 + s * 80);
-        b = (uint8_t)(255 - s * 200);
-    } else if (t < 0.82f) {
-        float s = (t - 0.64f) / 0.18f;
-        r = (uint8_t)(100 + s * 155);
-        g = (uint8_t)(230 - s * 100);
-        b = (uint8_t)(55  - s * 55);
-    } else {
-        float s = (t - 0.82f) / 0.18f;
-        r = (uint8_t)(255);
-        g = (uint8_t)(130 - s * 130);
-        b = 0;
+struct RGB { float r, g, b; };
+
+static RGB hsl2rgb(float h, float s, float l) {
+    float c = (1.f - std::abs(2.f * l - 1.f)) * s;
+    float x = c * (1.f - std::abs(std::fmod(h * 6.f, 2.f) - 1.f));
+    float m = l - c / 2.f;
+    float r = 0, g = 0, b = 0;
+    int   seg = (int)(h * 6.f);
+    switch (seg % 6) {
+        case 0: r=c; g=x; b=0; break;
+        case 1: r=x; g=c; b=0; break;
+        case 2: r=0; g=c; b=x; break;
+        case 3: r=0; g=x; b=c; break;
+        case 4: r=x; g=0; b=c; break;
+        case 5: r=c; g=0; b=x; break;
     }
+    return { (r + m) * 255.f, (g + m) * 255.f, (b + m) * 255.f };
 }
 
-static void gradient_generic(float t, uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) {
-    if (t <= 0.0f) { r = g = b = a = 0; return; }
-    t = std::min(t, 1.0f);
-    a = 220;
-    if (t < 0.25f) {
-        float s = t / 0.25f;
-        r = 0; g = (uint8_t)(s * 255); b = 255;
-    } else if (t < 0.5f) {
-        float s = (t - 0.25f) / 0.25f;
-        r = 0; g = 255; b = (uint8_t)(255 - s * 255);
-    } else if (t < 0.75f) {
-        float s = (t - 0.5f) / 0.25f;
-        r = (uint8_t)(s * 255); g = 255; b = 0;
-    } else {
-        float s = (t - 0.75f) / 0.25f;
-        r = 255; g = (uint8_t)(255 - s * 255); b = 0;
-    }
-}
-
-static float normalise(float v, HeatmapMetric metric) {
+static void metric_to_color(HeatmapMetric metric, double value,
+                             uint8_t& ro, uint8_t& go, uint8_t& bo, uint8_t& ao)
+{
+    float t = 0.f;
     switch (metric) {
-        case HeatmapMetric::RSRP:
-            return (v - (-120.f)) / ((-65.f) - (-120.f));
-        case HeatmapMetric::RSRQ:
-            return (v - (-20.f)) / ((-3.f) - (-20.f));
-        case HeatmapMetric::RSSI:
-            return (v - (-110.f)) / ((-50.f) - (-110.f));
-        case HeatmapMetric::RSSNR:
-            return (v - (-10.f)) / (40.f);
-        case HeatmapMetric::Altitude:
-            return (v - 100.f) / 300.f;
-        default:
-            return 0.f;
+        case HeatmapMetric::RSRP: {
+            double linMin = std::pow(10.0, -110.0 / 10.0);
+            double linMax = std::pow(10.0, -80.0  / 10.0);
+            double lin    = std::pow(10.0, value   / 10.0);
+            t = std::clamp((float)((lin - linMin) / (linMax - linMin)), 0.f, 1.f);
+            break;
+        }
+        case HeatmapMetric::RSRQ: {
+            double linMin = std::pow(10.0, -20.0 / 10.0);
+            double linMax = std::pow(10.0, -3.0  / 10.0);
+            double lin    = std::pow(10.0, value  / 10.0);
+            t = std::clamp((float)((lin - linMin) / (linMax - linMin)), 0.f, 1.f);
+            break;
+        }
+        case HeatmapMetric::RSSI: {
+            if (value > 0) value = -65.6;
+            double linMin = std::pow(10.0, -110.0 / 10.0);
+            double linMax = std::pow(10.0, -65.0  / 10.0);
+            double lin    = std::pow(10.0, value   / 10.0);
+            t = std::clamp((float)((lin - linMin) / (linMax - linMin)), 0.f, 1.f);
+            break;
+        }
+        case HeatmapMetric::RSSNR: {
+            t = std::clamp((float)((value - (-10.0)) / 40.0), 0.f, 1.f);
+            break;
+        }
+        case HeatmapMetric::Altitude: {
+            t = std::clamp((float)(value / 500.0), 0.f, 1.f);
+            break;
+        }
+        default: break;
     }
+
+    RGB rgb = hsl2rgb(0.666f * (1.f - t), 1.f, 0.5f);
+    ro = (uint8_t)std::clamp(rgb.r, 0.f, 255.f);
+    go = (uint8_t)std::clamp(rgb.g, 0.f, 255.f);
+    bo = (uint8_t)std::clamp(rgb.b, 0.f, 255.f);
+    ao = 191;
 }
 
-static std::vector<HeatPoint> query_lte_points(DBContext& db,
-                                                HeatmapMetric metric,
-                                                const char* where_clause = "") {
+static std::vector<HeatPoint> query_lte_points(DBContext& db, HeatmapMetric metric) {
     if (!db.connected || !db.conn) return {};
 
     const char* col = "rsrp";
     switch (metric) {
-        case HeatmapMetric::RSRQ:    col = "rsrq";  break;
-        case HeatmapMetric::RSSI:    col = "rssi";  break;
-        case HeatmapMetric::RSSNR:   col = "rssnr"; break;
+        case HeatmapMetric::RSRQ:  col = "rsrq";  break;
+        case HeatmapMetric::RSSI:  col = "rssi";  break;
+        case HeatmapMetric::RSSNR: col = "rssnr"; break;
         default: break;
     }
 
@@ -95,19 +94,18 @@ static std::vector<HeatPoint> query_lte_points(DBContext& db,
         snprintf(sql, sizeof(sql),
             "SELECT latitude, longitude, altitude FROM location_data "
             "WHERE latitude IS NOT NULL AND longitude IS NOT NULL "
-            "AND altitude IS NOT NULL %s LIMIT 50000;",
-            where_clause);
+            "AND altitude IS NOT NULL LIMIT 50000;");
     } else {
         snprintf(sql, sizeof(sql),
             "SELECT latitude, longitude, %s FROM lte_cells "
             "WHERE latitude IS NOT NULL AND longitude IS NOT NULL "
-            "AND %s IS NOT NULL %s LIMIT 50000;",
-            col, col, where_clause);
+            "AND %s IS NOT NULL LIMIT 50000;",
+            col, col);
     }
 
     PGresult* res = PQexec(db.conn, sql);
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        std::cerr << "heatmap query failed: " << PQerrorMessage(db.conn) << std::endl;
+        std::cerr << "heatmap query failed: " << PQerrorMessage(db.conn) << "\n";
         PQclear(res);
         return {};
     }
@@ -116,28 +114,29 @@ static std::vector<HeatPoint> query_lte_points(DBContext& db,
     std::vector<HeatPoint> pts;
     pts.reserve(rows);
     for (int i = 0; i < rows; i++) {
-        HeatPoint p;
-        p.lat   = atof(PQgetvalue(res, i, 0));
-        p.lon   = atof(PQgetvalue(res, i, 1));
-        p.value = (float)atof(PQgetvalue(res, i, 2));
-        pts.push_back(p);
+        float v = (float)atof(PQgetvalue(res, i, 2));
+        if (metric == HeatmapMetric::RSSI && v > 0) continue;
+        pts.push_back({ atof(PQgetvalue(res, i, 0)),
+                        atof(PQgetvalue(res, i, 1)),
+                        v });
     }
     PQclear(res);
     return pts;
 }
 
+static constexpr int   HEATMAP_SIZE = 512;
+static constexpr double SIGMA       = 0.01;
+static constexpr double CUTOFF_SQ   = (3.0 * SIGMA) * (3.0 * SIGMA);
+static constexpr double SIGMA2      = SIGMA * SIGMA;
 
 static std::vector<uint8_t> build_heatmap_image(
     const std::vector<HeatPoint>& pts,
     double min_lon, double max_lon,
     double min_lat, double max_lat,
-    int    grid_px,
-    float  idw_radius,
-    float  idw_power,
-    HeatmapMetric metric,
+    HeatmapMetric    metric,
     HeatmapEmptyFill empty_fill)
 {
-    int N = grid_px;
+    const int N = HEATMAP_SIZE;
     std::vector<uint8_t> img(N * N * 4, 0);
 
     if (pts.empty() || min_lon >= max_lon || min_lat >= max_lat) return img;
@@ -145,68 +144,79 @@ static std::vector<uint8_t> build_heatmap_image(
     double lon_span = max_lon - min_lon;
     double lat_span = max_lat - min_lat;
 
+    double sigma_deg = std::max(SIGMA, std::max(lon_span, lat_span) * 0.015);
+    double sigma2    = sigma_deg * sigma_deg;
+    double cutoffSq  = (3.0 * sigma_deg) * (3.0 * sigma_deg);
+
     for (int py = 0; py < N; py++) {
         double lat = max_lat - (py + 0.5) / N * lat_span;
 
         for (int px = 0; px < N; px++) {
             double lon = min_lon + (px + 0.5) / N * lon_span;
 
-            double cos_lat = std::cos(lat * M_PI / 180.0);
-
             double wsum = 0.0, vsum = 0.0;
-            bool   any  = false;
+            double minDistSq = 1e18;
+
+            float nearestVal = 0.f;
 
             for (const auto& p : pts) {
-                double dlat = (p.lat - lat);
-                double dlon = (p.lon - lon) * cos_lat;
-                double dist = std::sqrt(dlat * dlat + dlon * dlon);
+                double dlat = p.lat - lat;
+                double dlon = p.lon - lon;
+                double d2   = dlat * dlat + dlon * dlon;
 
-                if (dist > (double)idw_radius) continue;
-                any = true;
-
-                if (dist < 1e-9) {
-                    wsum = 1.0; vsum = p.value; break;
+                if (d2 < minDistSq) {
+                    minDistSq = d2;
+                    nearestVal = p.value;
                 }
-                double w = 1.0 / std::pow(dist, (double)idw_power);
+                if (d2 > cutoffSq)  continue;
+
+                double w = std::exp(-d2 / (2.0 * sigma2));
                 wsum += w;
                 vsum += w * p.value;
             }
 
-            if (!any || wsum < 1e-12) {
+            int idx = (py * N + px) * 4;
+
+            if (minDistSq >= cutoffSq) {
                 if (empty_fill == HeatmapEmptyFill::Blue) {
-                    int idx = (py * N + px) * 4;
                     img[idx + 0] = 0;
                     img[idx + 1] = 0;
                     img[idx + 2] = 200;
                     img[idx + 3] = 80;
                 }
-                // HeatmapEmptyFill::Transparent: leave pixel as 0,0,0,0 (already zeroed)
                 continue;
             }
+        
+            double distRatio = std::sqrt(minDistSq) / std::sqrt(cutoffSq);
+            double edgeFade  = 1.0 - distRatio;
+            edgeFade = edgeFade * edgeFade;
 
-            float val = (float)(vsum / wsum);
-            float t   = std::clamp(normalise(val, metric), 0.f, 1.f);
+            if (edgeFade < 1.0 / 255.0) continue;
+
+            float colorVal = (wsum > 1e-12) ? (float)(vsum / wsum) : nearestVal;
 
             uint8_t r, g, b, a;
-            if (metric == HeatmapMetric::RSRP)
-                gradient_rsrp(t, r, g, b, a);
-            else
-                gradient_generic(t, r, g, b, a);
+            metric_to_color(metric, colorVal, r, g, b, a);
 
-            int idx = (py * N + px) * 4;
             img[idx + 0] = r;
             img[idx + 1] = g;
             img[idx + 2] = b;
-            img[idx + 3] = a;
+            img[idx + 3] = (uint8_t)(a * edgeFade);
         }
     }
     return img;
 }
 
 struct WorkerPayload {
-    HeatmapState*  hs;
-    DBContext*     db;
-    MapBounds      bounds;
+    HeatmapState* hs;
+    DBContext*    db;
+    MapBounds     bounds;
+};
+
+struct StagingBuf {
+    std::vector<uint8_t> rgba;
+    int w, h;
+    double min_lon, max_lon, min_lat, max_lat;
 };
 
 static void heatmap_worker(WorkerPayload payload) {
@@ -239,51 +249,32 @@ static void heatmap_worker(WorkerPayload payload) {
         min_lat = payload.bounds.min_lat; max_lat = payload.bounds.max_lat;
     }
 
-    char where[256] = "";
+    double pad_lon = (max_lon - min_lon) * 0.03;
+    double pad_lat = (max_lat - min_lat) * 0.03;
+    min_lon -= pad_lon; max_lon += pad_lon;
+    min_lat -= pad_lat; max_lat += pad_lat;
 
-    std::vector<HeatPoint> pts = query_lte_points(db, hs.metric, where);
-
+    std::vector<HeatPoint> pts = query_lte_points(db, hs.metric);
+    {
+        std::lock_guard<std::mutex> lk(hs.points_mtx);
+        hs.cached_points = pts;
+    }
     if (pts.empty()) {
         hs.busy = false;
         return;
     }
 
-    float radius = hs.idw_radius;
-    {
-        float span = (float)std::max(max_lon - min_lon, max_lat - min_lat);
-        radius = std::max(radius, span * 0.02f);
-    }
-
-    int N = hs.grid_px;
     std::vector<uint8_t> rgba = build_heatmap_image(
         pts, min_lon, max_lon, min_lat, max_lat,
-        N, radius, hs.idw_power, hs.metric, hs.empty_fill);
+        hs.metric, hs.empty_fill);
 
-    {
-        std::lock_guard<std::mutex> lk(hs.result_mtx);
-        hs.result.min_lon = min_lon; hs.result.max_lon = max_lon;
-        hs.result.min_lat = min_lat; hs.result.max_lat = max_lat;
-        hs.result.ready   = false;
-    }
-
-    struct Staging {
-        std::vector<uint8_t> rgba;
-        int                  w = 0, h = 0;
-        bool                 pending = false;
-    };
-    struct StagingBuf {
-        std::vector<uint8_t> rgba;
-        int w, h;
-        double min_lon, max_lon, min_lat, max_lat;
-    };
     StagingBuf* stg = new StagingBuf{
-        std::move(rgba), N, N,
+        std::move(rgba), HEATMAP_SIZE, HEATMAP_SIZE,
         min_lon, max_lon, min_lat, max_lat
     };
 
     {
         std::lock_guard<std::mutex> lk(hs.result_mtx);
-        static_assert(sizeof(uintptr_t) <= sizeof(uint64_t), "ptr size");
         hs.result.tex_id  = 0xFFFFFFFF;
         hs.result.ready   = false;
         uintptr_t ptr = reinterpret_cast<uintptr_t>(stg);
@@ -294,13 +285,44 @@ static void heatmap_worker(WorkerPayload payload) {
     hs.busy = false;
 }
 
+void heatmap_draw_points(HeatmapState& hs, int zoom) {
+    if (!hs.enabled) return;
+    if (!hs.show_points) return; 
+
+    std::vector<HeatPoint> pts;
+    {
+        std::lock_guard<std::mutex> lk(hs.points_mtx);
+        pts = hs.cached_points;
+    }
+    if (pts.empty()) return;
+
+    ImDrawList* dl = ImPlot::GetPlotDrawList();
+    ImPlot::PushPlotClipRect();
+
+    const float radius = std::clamp(2.0f + (zoom - 8) * 0.6f, 2.0f, 10.0f);
+
+    for (const auto& p : pts) {
+        double tx = lon_to_tile_x(p.lon, zoom);
+        double ty = lat_to_tile_y(p.lat, zoom);
+        ImVec2 screen = ImPlot::PlotToPixels(ImPlotPoint(tx, ty));
+
+        uint8_t r, g, b, a;
+        metric_to_color(hs.metric, p.value, r, g, b, a);
+
+        dl->AddCircleFilled(screen, radius,
+            IM_COL32(r, g, b, 210));
+        dl->AddCircle(screen, radius,
+            IM_COL32(0, 0, 0, 120), 12, 1.0f);
+    }
+
+    ImPlot::PopPlotClipRect();
+}
+
 HeatmapState::~HeatmapState() {
     heatmap_shutdown(*this);
 }
 
-void heatmap_init(HeatmapState& hs) {
-    (void)hs;
-}
+void heatmap_init(HeatmapState& hs) { (void)hs; }
 
 void heatmap_shutdown(HeatmapState& hs) {
     hs.shutdown = true;
@@ -320,11 +342,6 @@ void heatmap_upload_pending(HeatmapState& hs) {
     uintptr_t hi  = (uintptr_t)(uint32_t)hs.result.max_lon;
     uintptr_t ptr = lo | (hi << 32);
 
-    struct StagingBuf {
-        std::vector<uint8_t> rgba;
-        int w, h;
-        double min_lon, max_lon, min_lat, max_lat;
-    };
     StagingBuf* stg = reinterpret_cast<StagingBuf*>(ptr);
     if (!stg) return;
 
@@ -355,18 +372,13 @@ void heatmap_upload_pending(HeatmapState& hs) {
     delete stg;
 }
 
-void heatmap_request_update(HeatmapState& hs,
-                             DBContext& db,
-                             const MapBounds& bounds) {
-    if (!hs.enabled) return;
-    if (hs.busy)     return;
+void heatmap_request_update(HeatmapState& hs, DBContext& db, const MapBounds& bounds) {
+    if (!hs.enabled)       return;
+    if (hs.busy)           return;
+    if (!hs.dirty.load())  return;
 
-    bool need_regen = hs.dirty.load();
-
-    if (!need_regen) return;
-
-    hs.dirty        = false;
-    hs.busy         = true;
+    hs.dirty = false;
+    hs.busy  = true;
 
     if (hs.worker.joinable()) hs.worker.join();
 
@@ -395,19 +407,17 @@ void heatmap_draw(HeatmapState& hs, int zoom) {
     ImVec2 p0 = ImPlot::PlotToPixels(ImPlotPoint(tx0, ty0));
     ImVec2 p1 = ImPlot::PlotToPixels(ImPlotPoint(tx1, ty1));
 
-    ImU32 tint = IM_COL32(255, 255, 255, (int)(hs.alpha * 255));
     dl->AddImage(
         reinterpret_cast<ImTextureID>(static_cast<uintptr_t>(res.tex_id)),
         p0, p1,
         ImVec2(0, 0), ImVec2(1, 1),
-        tint);
+        IM_COL32_WHITE);
 
     ImPlot::PopPlotClipRect();
 }
 
 void heatmap_draw_controls(HeatmapState& hs, DBContext& db,
-                           const MapBounds& bounds,
-                           float dpi_scale) {
+                           const MapBounds& bounds, float dpi_scale) {
     ImGui::Separator();
     ImGui::Spacing();
     ImGui::TextColored(ImVec4(0.2f, 0.85f, 0.9f, 1.f), "Heatmap");
@@ -417,6 +427,8 @@ void heatmap_draw_controls(HeatmapState& hs, DBContext& db,
 
     changed |= ImGui::Checkbox("Enable heatmap", &hs.enabled);
     if (!hs.enabled) return;
+    
+    ImGui::Checkbox("Show data points", &hs.show_points);
 
     ImGui::SetNextItemWidth(220 * dpi_scale);
     int metric_idx = (int)hs.metric;
@@ -432,25 +444,7 @@ void heatmap_draw_controls(HeatmapState& hs, DBContext& db,
         changed = true;
     }
 
-    ImGui::SetNextItemWidth(180 * dpi_scale);
-    if (ImGui::SliderFloat("Opacity##hm", &hs.alpha, 0.05f, 1.0f, "%.2f"))
-        {}
-
-    ImGui::SetNextItemWidth(180 * dpi_scale);
-    if (ImGui::SliderFloat("IDW Radius (deg)##hm", &hs.idw_radius, 0.001f, 0.5f, "%.4f"))
-        changed = true;
-
-    ImGui::SetNextItemWidth(180 * dpi_scale);
-    if (ImGui::SliderFloat("IDW Power##hm", &hs.idw_power, 0.5f, 5.0f, "%.1f"))
-        changed = true;
-
-    int gp = hs.grid_px;
-    ImGui::SetNextItemWidth(180 * dpi_scale);
-    if (ImGui::SliderInt("Grid resolution##hm", &gp, 128, 1024)) {
-        hs.grid_px = gp;
-        changed = true;
-    }
-
+    ImGui::Spacing();
     if (hs.busy)
         ImGui::TextColored(ImVec4(1.f, 0.8f, 0.2f, 1.f), "  Generating...");
     else if (hs.result.ready)

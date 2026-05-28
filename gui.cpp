@@ -341,6 +341,7 @@ static void draw_osm_map(float dpi_scale, MapState& ms,
         MapBounds hm_bounds = ms.get_bounds_copy();
         heatmap_request_update(hs, db, hm_bounds);
         heatmap_draw(hs, zoom);
+        heatmap_draw_points(hs, zoom);
 
         if (ImPlot::IsPlotHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
             ImVec2 delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);

@@ -31,18 +31,10 @@ struct HeatPoint {
 };
 
 struct HeatmapState {
-    HeatmapMetric    metric      = HeatmapMetric::RSRP;
-    HeatmapEmptyFill empty_fill  = HeatmapEmptyFill::Blue;
-    bool             enabled     = false;
-    float            alpha       = 0.65f;
-    int              grid_px     = 512;
-    float            idw_radius  = 0.01f;
-    float            idw_power   = 2.0f;
-
-    float thr_excellent = -80.f;
-    float thr_good      = -90.f;
-    float thr_fair      = -100.f;
-    float thr_poor      = -110.f;
+    HeatmapMetric    metric     = HeatmapMetric::RSRP;
+    HeatmapEmptyFill empty_fill = HeatmapEmptyFill::Transparent;
+    bool             enabled    = false;
+    bool show_points = true;
 
     std::thread           worker;
     std::atomic<bool>     dirty{true};
@@ -55,24 +47,19 @@ struct HeatmapState {
         double min_lon = 0, max_lon = 0;
         double min_lat = 0, max_lat = 0;
     };
-    Result              result;
-    std::mutex          result_mtx;
+    std::vector<HeatPoint> cached_points;
+    std::mutex             points_mtx;
+    Result     result;
+    std::mutex result_mtx;
 
     ~HeatmapState();
 };
 
 void heatmap_init(HeatmapState& hs);
-
 void heatmap_upload_pending(HeatmapState& hs);
-
-void heatmap_request_update(HeatmapState& hs,
-                             DBContext& db,
-                             const MapBounds& bounds);
-
+void heatmap_request_update(HeatmapState& hs, DBContext& db, const MapBounds& bounds);
 void heatmap_draw(HeatmapState& hs, int zoom);
-
 void heatmap_draw_controls(HeatmapState& hs, DBContext& db,
-                           const MapBounds& bounds,
-                           float dpi_scale);
-
+                           const MapBounds& bounds, float dpi_scale);
 void heatmap_shutdown(HeatmapState& hs);
+void heatmap_draw_points(HeatmapState& hs, int zoom);

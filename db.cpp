@@ -231,7 +231,7 @@ static int rand_int(int lo, int hi) {
     return lo + rand() % (hi - lo + 1);
 }
 
-static int rand_rsrp() { return rand_int(-120, -65); }
+static int rand_rsrp() { return rand_int(-105, -65); }
 static int rand_rsrq() { return rand_int(-20,  -3);  }
 static int rand_rssi() { return rand_int(-110, -50); }
 static int rand_rssnr(){ return rand_int(-10,  30);  }
