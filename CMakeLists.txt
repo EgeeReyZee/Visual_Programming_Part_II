@@ -116,6 +116,7 @@ add_executable(zmq_server
     server.cpp
     gui.cpp
     map.cpp
+    heatmap.cpp 
 )
 
 target_include_directories(zmq_server PRIVATE

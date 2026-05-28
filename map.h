@@ -60,7 +60,7 @@ struct MapState {
     double center_lat  =  55.01;
     double center_lon  =  82.95;
     int    zoom        =  1;
-    int    last_zoom   =  1;   
+    int    last_zoom   =  1;
 
     std::vector<std::thread>          workers;
     std::queue<TileKey>               download_queue;
@@ -75,7 +75,7 @@ struct MapState {
         double min_lat = 0;
         double max_lat = 0;
         int zoom = 0;
-        std::mutex mtx;
+        mutable std::mutex mtx;   // mutable — чтобы lock в const-методе работал
     } current_bounds;
     
     void update_bounds(double min_lon_, double max_lon_, 

@@ -220,6 +220,15 @@ build CMakeFiles/zmq_server.dir/map.cpp.obj: CXX_COMPILER__zmq_server_unscanned_
   OBJECT_FILE_DIR = CMakeFiles\zmq_server.dir
   TARGET_SUPPORT_DIR = CMakeFiles\zmq_server.dir
 
+build CMakeFiles/zmq_server.dir/heatmap.cpp.obj: CXX_COMPILER__zmq_server_unscanned_Release C$:/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/heatmap.cpp || cmake_object_order_depends_target_zmq_server
+  CONFIG = Release
+  DEP_FILE = CMakeFiles\zmq_server.dir\heatmap.cpp.obj.d
+  FLAGS = -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -Wno-unused-variable
+  INCLUDES = -IC:/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/json/include -IC:/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui -IC:/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/imgui/backends -IC:/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/implot -IC:/msys64/mingw64/include/postgresql/server -IC:/Users/619/Desktop/СибГУТИ/Visual_Programming_Part_II/Visual_Programming_Part_II/glfw/include
+  OBJECT_DIR = CMakeFiles\zmq_server.dir
+  OBJECT_FILE_DIR = CMakeFiles\zmq_server.dir
+  TARGET_SUPPORT_DIR = CMakeFiles\zmq_server.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target zmq_server
@@ -228,7 +237,7 @@ build CMakeFiles/zmq_server.dir/map.cpp.obj: CXX_COMPILER__zmq_server_unscanned_
 #############################################
 # Link the executable zmq_server.exe
 
-build zmq_server.exe: CXX_EXECUTABLE_LINKER__zmq_server_Release CMakeFiles/zmq_server.dir/main.cpp.obj CMakeFiles/zmq_server.dir/db.cpp.obj CMakeFiles/zmq_server.dir/server.cpp.obj CMakeFiles/zmq_server.dir/gui.cpp.obj CMakeFiles/zmq_server.dir/map.cpp.obj | libimgui.a libimplot.a C$:/msys64/mingw64/lib/libpq.dll.a C$:/msys64/mingw64/lib/libcurl.dll.a libimgui.a glfw_build/src/libglfw3.a C$:/msys64/mingw64/lib/libzmq.dll.a || glfw_build/src/libglfw3.a libimgui.a libimplot.a
+build zmq_server.exe: CXX_EXECUTABLE_LINKER__zmq_server_Release CMakeFiles/zmq_server.dir/main.cpp.obj CMakeFiles/zmq_server.dir/db.cpp.obj CMakeFiles/zmq_server.dir/server.cpp.obj CMakeFiles/zmq_server.dir/gui.cpp.obj CMakeFiles/zmq_server.dir/map.cpp.obj CMakeFiles/zmq_server.dir/heatmap.cpp.obj | libimgui.a libimplot.a C$:/msys64/mingw64/lib/libpq.dll.a C$:/msys64/mingw64/lib/libcurl.dll.a libimgui.a glfw_build/src/libglfw3.a C$:/msys64/mingw64/lib/libzmq.dll.a || glfw_build/src/libglfw3.a libimgui.a libimplot.a
   CONFIG = Release
   FLAGS = -O3 -DNDEBUG
   LINK_LIBRARIES = libimgui.a  libimplot.a  -lopengl32  C:/msys64/mingw64/lib/libpq.dll.a  C:/msys64/mingw64/lib/libcurl.dll.a  -lws2_32  -lcrypt32  libimgui.a  -lopengl32  glfw_build/src/libglfw3.a  C:/msys64/mingw64/lib/libzmq.dll.a  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32

@@ -2,6 +2,7 @@
 #include "server.h"
 #include "map.h"
 #include "db.h"
+#include "heatmap.h"
 
 #include <cstdarg>
 #include <cmath>
@@ -298,7 +299,9 @@ static void draw_signal_plots(float dpi_scale, const SignalHistory& h) {
     }
 }
 
-static void draw_osm_map(float dpi_scale, MapState& ms, double& center_lat, double& center_lon, int& zoom) {
+static void draw_osm_map(float dpi_scale, MapState& ms,
+                         double& center_lat, double& center_lon, int& zoom,
+                         HeatmapState& hs, DBContext& db) {
     ImGui::SetNextWindowPos (ImVec2(10 * dpi_scale, 710 * dpi_scale), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(730 * dpi_scale, 500 * dpi_scale), ImGuiCond_FirstUseEver);
     ImGui::Begin("OSM Map", nullptr);
@@ -334,6 +337,11 @@ static void draw_osm_map(float dpi_scale, MapState& ms, double& center_lat, doub
 
         map_draw(ms, center_lat, center_lon, zoom, plot_size.x, plot_size.y);
 
+        heatmap_upload_pending(hs);
+        MapBounds hm_bounds = ms.get_bounds_copy();
+        heatmap_request_update(hs, db, hm_bounds);
+        heatmap_draw(hs, zoom);
+
         if (ImPlot::IsPlotHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
             ImVec2 delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
             ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
@@ -356,9 +364,9 @@ static void draw_osm_map(float dpi_scale, MapState& ms, double& center_lat, doub
     ImGui::End();
 }
 
-static void draw_sql_panel(float dpi_scale, DBContext& db) {
+static void draw_sql_panel(float dpi_scale, DBContext& db, MapState& ms) {
     ImGui::SetNextWindowPos (ImVec2(750 * dpi_scale,  570 * dpi_scale), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(560 * dpi_scale, 400 * dpi_scale), ImGuiCond_FirstUseEver);  // Increased height
+    ImGui::SetNextWindowSize(ImVec2(560 * dpi_scale, 400 * dpi_scale), ImGuiCond_FirstUseEver); 
     ImGui::Begin("Database Control", nullptr);
     
     static char buffer[4096];
@@ -373,7 +381,7 @@ static void draw_sql_panel(float dpi_scale, DBContext& db) {
     }
     
     if (ImGui::Button("RUN")) {
-        has_result = db_control(db, buffer, result_buffer, sizeof(result_buffer));
+        has_result = db_control(db, buffer, result_buffer, sizeof(result_buffer), ms);
     }
     
     ImGui::SameLine();
@@ -432,6 +440,8 @@ void run_gui(SharedState* state, DBContext& db) {
 
     MapState map_state;
     map_init(map_state, 2);
+    HeatmapState heatmap_state;
+    heatmap_init(heatmap_state);
     double map_lat  = 55.01;
     double map_lon  = 82.95;
     int    map_zoom = 1;
@@ -469,7 +479,7 @@ void run_gui(SharedState* state, DBContext& db) {
         draw_location_network_panel(dpi_scale, locCopy, netCopy, msgCount);
         draw_log_panel(dpi_scale, historyLines);
         draw_signal_plots(dpi_scale, histCopy);
-        draw_sql_panel(dpi_scale, db);
+        draw_sql_panel(dpi_scale, db, map_state);
 
         if (map_follow && locCopy.valid) {
             map_lat = locCopy.latitude;
@@ -479,7 +489,7 @@ void run_gui(SharedState* state, DBContext& db) {
         map_upload_pending(map_state);
 
         ImGui::SetNextWindowPos(ImVec2(10 * dpi_scale, 670 * dpi_scale), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(730 * dpi_scale, 35 * dpi_scale), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(200 * dpi_scale, 300 * dpi_scale), ImGuiCond_FirstUseEver);
         ImGui::Begin("##mapctrl", nullptr,
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
         ImGui::Checkbox("Follow GPS", &map_follow);
@@ -488,9 +498,12 @@ void run_gui(SharedState* state, DBContext& db) {
             map_lat = locCopy.latitude;
             map_lon = locCopy.longitude;
         }
+        heatmap_draw_controls(heatmap_state, db,
+                      map_state.get_bounds_copy(),
+                      dpi_scale);
         ImGui::End();
 
-        draw_osm_map(dpi_scale, map_state, map_lat, map_lon, map_zoom);
+        draw_osm_map(dpi_scale, map_state, map_lat, map_lon, map_zoom, heatmap_state, db);
 
         ImGui::Render();
         int w, h;
@@ -506,6 +519,7 @@ void run_gui(SharedState* state, DBContext& db) {
     if (server_thread.joinable()) server_thread.join();
 
     map_shutdown(map_state);
+    heatmap_shutdown(heatmap_state);
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
